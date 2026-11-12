@@ -1,0 +1,11 @@
+{
+  "documents": [
+    {
+      "document_id": "observabilidad-incidentes",
+      "page": 1,
+      "category": "observabilidad",
+      "tags": ["prometheus", "grafana", "alertas", "slo"],
+      "content": "La observabilidad de incidentes combina métricas, logs y trazas correlacionadas. Las alertas se originan en síntomas que afectan al usuario, como disponibilidad, latencia y errores, y no únicamente en el consumo de recursos. Cada alerta incluye servicio, severidad, panel, runbook y criterio de recuperación. Prometheus registra los indicadores y Grafana presenta paneles con ventanas comparables. El error budget determina cuándo detener cambios y priorizar confiabilidad. Durante un incidente se conserva una línea de tiempo con detección, mitigación y recuperación. La alerta se cierra cuando los indicadores permanecen dentro del SLO durante quince minutos y no aparecen errores relacionados en logs o trazas."
+    }
+  ]
+}

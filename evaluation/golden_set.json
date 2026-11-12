@@ -1,0 +1,22 @@
+[
+  {
+    "question": "¿Cómo se evita repetir un cargo cuando Redis conserva una clave de idempotencia?",
+    "relevant_document_ids": ["redis_idempotencia"]
+  },
+  {
+    "question": "¿Qué validaciones deben completarse antes de promover una restauración de PostgreSQL?",
+    "relevant_document_ids": ["postgresql_recuperacion"]
+  },
+  {
+    "question": "¿Qué pasos se siguen para diagnosticar errores 5xx en la API de pagos?",
+    "relevant_document_ids": ["runbook_api_pagos"]
+  },
+  {
+    "question": "¿Cómo se diagnostica un pod en estado CrashLoopBackOff?",
+    "relevant_document_ids": ["kubernetes_diagnostico"]
+  },
+  {
+    "question": "¿Qué señales y datos deben correlacionarse durante un incidente?",
+    "relevant_document_ids": ["observabilidad-incidentes"]
+  }
+]

@@ -4,24 +4,25 @@ build-backend = "hatchling.build"
 
 [project]
 name = "incident-intelligence-system"
-version = "0.3.0"
-description = "Sistema RAG local asíncrono con ChromaDB, LCEL y Pydantic."
+version = "0.4.0"
+description = "Recuperación híbrida escalable con Pinecone Serverless y BM25."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "Diego Chiang Meléndez" }]
 dependencies = [
-  "anthropic>=0.75,<2",
-  "chromadb>=1.0,<2",
-  "langchain-anthropic>=1.0,<2",
-  "langchain-chroma>=1.0,<2",
+  "langchain-classic>=1.0,<2",
+  "langchain-community>=0.4,<1",
   "langchain-core>=1.0,<2",
   "langchain-openai>=1.0,<2",
   "langchain-text-splitters>=1.0,<2",
   "openai>=2.0,<3",
+  "pinecone>=10.0,<11",
   "pydantic>=2.10,<3",
   "pydantic-settings>=2.7,<3",
+  "pypdf>=6.0,<7",
   "python-dotenv>=1.0,<2",
+  "rank-bm25>=0.2,<1",
   "truststore>=0.10,<1",
 ]
 
@@ -34,7 +35,7 @@ dev = [
 ]
 
 [project.scripts]
-rag-local = "incident_intelligence.cli.rag_local:main"
+cloud-rag = "incident_intelligence.cli.cloud_rag:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/incident_intelligence"]
@@ -44,9 +45,6 @@ addopts = "-q --strict-markers"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
-filterwarnings = [
-  "ignore:'asyncio.iscoroutinefunction'.*:DeprecationWarning:chromadb.*",
-]
 
 [tool.ruff]
 line-length = 100

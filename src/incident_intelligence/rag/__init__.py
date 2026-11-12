@@ -1,7 +1,7 @@
-"""Ingesta, persistencia y recuperación semántica local."""
+"""Ingesta cloud, recuperación híbrida y evaluación cuantitativa."""
 
-from incident_intelligence.rag.schemas import RAGAnswer, SourceReference
-from incident_intelligence.rag.service import RAGService, get_rag_response
+from incident_intelligence.rag.evaluation import evaluate_retrieval
+from incident_intelligence.rag.retrieval import RAGSystem
 
-__all__ = ["RAGAnswer", "RAGService", "SourceReference", "get_rag_response"]
+__all__ = ["RAGSystem", "evaluate_retrieval"]
 

@@ -1,6 +1,6 @@
-"""Punto de entrada del sistema RAG local."""
+"""Punto de entrada del recuperador híbrido en Pinecone."""
 
-from incident_intelligence.cli.rag_local import main
+from incident_intelligence.cli.cloud_rag import main
 
 if __name__ == "__main__":
     main()

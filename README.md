@@ -1,145 +1,100 @@
-# Sistema de recuperación semántica local
+# Sistema RAG híbrido en Pinecone
 
-Sistema RAG asíncrono que indexa documentos `.txt` y `.md` en ChromaDB, recupera los fragmentos
-más relevantes y genera respuestas sustentadas únicamente en el contexto recuperado.
+Sistema de recuperación de documentación técnica que combina búsqueda semántica en Pinecone
+Serverless con búsqueda léxica BM25. Procesa Markdown, texto, JSON y PDF; conserva metadatos de
+origen; y mide Precision@5 y Recall@5 sobre un Golden Set.
 
 ## Componentes
 
-### Ingesta
-
-- Lectura recursiva de documentos desde `data/`.
-- `RecursiveCharacterTextSplitter` con fragmentos de 500 unidades léxicas y 50 de solapamiento.
-- Identificadores reproducibles mediante SHA-256.
-- Embeddings de OpenAI y persistencia local en `vectorstore/`.
-- Manifiesto para omitir documentos sin cambios y retirar fragmentos obsoletos.
-- Reconstrucción controlada cuando cambia el modelo de embeddings o el chunking.
-
-### Recuperación y generación
-
-- El mismo modelo de embeddings se utiliza para indexar y consultar.
-- Recuperación de cuatro fragmentos por defecto, restringida al rango de 3 a 5.
-- Filtro de relevancia con similitud coseno.
-- Prompt que responde exclusivamente con el contexto disponible.
-- Cadena LCEL con `PydanticOutputParser` y ejecución asíncrona.
-- Citas validadas contra los identificadores realmente recuperados.
-- Respuesta `No lo sé con la información disponible.` cuando no existe respaldo documental.
-
-## Contrato de salida
-
-```json
-{
-  "answer": "Las claves de idempotencia se conservan durante 24 horas.",
-  "grounded": true,
-  "confidence": 0.97,
-  "cited_chunk_ids": ["identificador-del-fragmento"],
-  "sources": [
-    {
-      "source": "redis_idempotencia.txt",
-      "chunk_id": "identificador-del-fragmento",
-      "excerpt": "El clúster Redis conserva claves...",
-      "score": 0.44
-    }
-  ]
-}
-```
+- Índice serverless con vectores de 1536 dimensiones y similitud coseno.
+- Embeddings `text-embedding-3-small`.
+- Fragmentos de 600 tokens con solapamiento de 100.
+- Metadatos: fuente, página, categoría, etiquetas, documento y posición del fragmento.
+- Recuperación híbrida con pesos 0,60 semántico y 0,40 BM25.
+- Cinco resultados únicos por consulta.
+- Benchmark reproducible de cinco preguntas.
 
 ## Instalación
 
+Requiere Python 3.12 o superior.
+
 ```bash
 python -m venv .venv
+.venv\Scripts\activate
 python -m pip install -e ".[dev]"
+copy .env.example .env
 ```
 
-En PowerShell:
+Configurar las credenciales en `.env`:
 
-```powershell
-Copy-Item .env.example .env
+```dotenv
+OPENAI_API_KEY=...
+PINECONE_API_KEY=...
 ```
 
-Configurar las claves y modelos en `.env`. OpenAI se utiliza para embeddings; el modelo de
-generación puede ser OpenAI o Anthropic mediante `LLM_PROVIDER`.
+El archivo `.env` está excluido del control de versiones.
 
-`.env` y `vectorstore/` están excluidos del control de versiones.
+## Uso
 
-## Ejecución
-
-Indexar los documentos:
+Crear o validar el índice:
 
 ```bash
-python main.py ingest
+cloud-rag setup
 ```
 
-Realizar una consulta:
+Procesar el corpus y cargarlo en Pinecone:
 
 ```bash
-python main.py query "¿Durante cuánto tiempo se conservan las claves de idempotencia?"
+python ingest.py
 ```
 
-Demostración completa:
+Ejecutar una consulta híbrida:
 
 ```bash
-python examples/rag_demo.py
+cloud-rag query "¿Qué revisar cuando la API de pagos presenta errores 5xx?"
 ```
 
-## Pruebas de evidencia
-
-Pregunta respaldada:
+Calcular las métricas del Golden Set:
 
 ```bash
-python main.py query "¿Durante cuánto tiempo se conservan las claves de idempotencia?"
+python evaluate.py
 ```
 
-El resultado menciona 24 horas y referencia `redis_idempotencia.txt`.
+También se encuentran disponibles `cloud-rag ingest` y `cloud-rag evaluate`.
 
-Pregunta sin respaldo:
+## Replicación del índice
 
-```bash
-python main.py query "¿Cuál es la contraseña del servidor de producción?"
-```
+La configuración predeterminada crea `incident-knowledge-cloud` en AWS `us-east-1` con un campo
+`embedding` de tipo `dense_vector`, dimensión 1536 y métrica coseno. Puede cambiarse mediante las
+variables `PINECONE_INDEX_NAME`, `PINECONE_NAMESPACE`, `PINECONE_CLOUD` y `PINECONE_REGION`.
 
-El resultado debe indicar que la información no está disponible, con `grounded=false`, confianza
-cero y sin fuentes.
-
-## Función pública
-
-```python
-from incident_intelligence.rag import get_rag_response
-
-answer = await get_rag_response("¿Cuánto duran las claves de idempotencia?")
-```
-
-## Verificación
-
-```bash
-pytest
-ruff check .
-python -m compileall src examples main.py
-```
-
-Las pruebas cubren fragmentación, solapamiento, persistencia, ingesta idempotente, recuperación,
-parsing Pydantic, citas, respuesta respaldada y pregunta trampa.
+La ingesta almacena el texto original junto con `document_id`, `source`, `page`, `category`, `tags`
+y `chunk_index`. El namespace evita mezclar el corpus técnico con datos de otras aplicaciones.
 
 ## Estructura
 
 ```text
-.
-├── data/                         # Documentos de ejemplo
-├── docs/rag_local.md             # Diseño y operación
-├── examples/rag_demo.py          # Demostración asíncrona
-├── src/incident_intelligence/
-│   ├── cli/rag_local.py
-│   ├── integrations/langchain.py
-│   ├── rag/
-│   │   ├── chunking.py
-│   │   ├── documents.py
-│   │   ├── ingestion.py
-│   │   ├── repository.py
-│   │   ├── generation.py
-│   │   ├── schemas.py
-│   │   └── service.py
-│   └── config.py
-├── tests/
-├── .env.example
-├── main.py
-└── pyproject.toml
+data/                         corpus técnico
+evaluation/golden_set.json   preguntas y documentos esperados
+src/incident_intelligence/
+  rag/documents.py            carga multiformato
+  rag/chunking.py             fragmentación reproducible
+  rag/pinecone.py             índice serverless
+  rag/ingestion.py            embeddings y carga por lotes
+  rag/retrieval.py            Pinecone + BM25
+  rag/evaluation.py           Precision@5 y Recall@5
+ingest.py                     ejecutable de ingesta
+evaluate.py                   ejecutable de evaluación
 ```
+
+La descripción de arquitectura y métricas está en [docs/cloud_rag.md](docs/cloud_rag.md).
+
+## Calidad
+
+```bash
+pytest
+ruff check .
+```
+
+Las pruebas cubren carga y metadatos, fragmentación, configuración del índice, ingesta por lotes,
+fusión de resultados y cálculo del benchmark sin depender de recursos externos.
